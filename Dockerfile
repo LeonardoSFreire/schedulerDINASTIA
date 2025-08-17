@@ -1,21 +1,21 @@
-# Use Python 3.11 slim image
+# Usar imagem Python 3.11 slim
 FROM python:3.11-slim
 
-# Set working directory
+# Definir diretório de trabalho
 WORKDIR /app
 
-# Copy requirements first for better caching
+# Copiar requirements primeiro para melhor cache
 COPY requirements.txt .
 
-# Install Python dependencies
+# Instalar dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copiar código da aplicação
 COPY scheduler_api.py .
 COPY .env .
 
-# Expose port 8000
+# Expor porta 8000
 EXPOSE 8000
 
-# Run the application
+# Executar a aplicação
 CMD ["python", "scheduler_api.py"]

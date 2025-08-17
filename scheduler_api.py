@@ -14,20 +14,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Scheduler API", version="1.0.0")
+app = FastAPI(title="API de Agendamento", version="1.0.0")
 
 API_TOKEN = os.getenv('API_TOKEN')
 
 def verify_token(authorization: str = Header(None)):
     if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header required")
+        raise HTTPException(status_code=401, detail="Cabeçalho de autorização obrigatório")
     
     if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authorization format")
+        raise HTTPException(status_code=401, detail="Formato de autorização inválido")
     
     token = authorization.replace("Bearer ", "")
     if token != API_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Token inválido")
     
     return token
 
@@ -48,12 +48,12 @@ def fire_webhook(message_id: str, webhook_url: str, payload: Dict[str, Any]):
     try:
         response = requests.post(webhook_url, json=payload, timeout=30)
         response.raise_for_status()
-        print(f"Webhook fired successfully for message {message_id}")
+        print(f"Webhook disparado com sucesso para mensagem {message_id}")
     except Exception as e:
-        print(f"Failed to fire webhook for message {message_id}: {e}")
+        print(f"Falha ao disparar webhook para mensagem {message_id}: {e}")
     finally:
         redis_client.delete(f"message:{message_id}")
-        print(f"Message {message_id} cleaned from Redis")
+        print(f"Mensagem {message_id} removida do Redis")
 
 def schedule_message(message_id: str, schedule_timestamp: str, webhook_url: str, payload: Dict[str, Any]):
     schedule_time = datetime.fromisoformat(schedule_timestamp.replace('Z', '+00:00'))
@@ -89,15 +89,15 @@ def restore_scheduled_messages():
                 
                 schedule_message(message_id, schedule_to, webhook_url, payload)
                 restored_count += 1
-                print(f"[{datetime.now().isoformat()}] Restored scheduled message - ID: {message_id}")
+                print(f"[{datetime.now().isoformat()}] Mensagem agendada restaurada - ID: {message_id}")
                 
             except Exception as e:
-                print(f"[{datetime.now().isoformat()}] Failed to restore message {key}: {e}")
+                print(f"[{datetime.now().isoformat()}] Falha ao restaurar mensagem {key}: {e}")
         
-        print(f"[{datetime.now().isoformat()}] Restored {restored_count} scheduled messages from Redis")
+        print(f"[{datetime.now().isoformat()}] Restauradas {restored_count} mensagens agendadas do Redis")
         
     except Exception as e:
-        print(f"[{datetime.now().isoformat()}] Error restoring messages: {e}")
+        print(f"[{datetime.now().isoformat()}] Erro ao restaurar mensagens: {e}")
 
 restore_scheduled_messages()
 
@@ -110,8 +110,8 @@ async def create_scheduled_message(message: ScheduleMessage, token: str = Depend
         redis_key = f"message:{message.id}"
         
         if redis_client.exists(redis_key):
-            print(f"[{datetime.now().isoformat()}] Message already exists in Redis - ID: {message.id}")
-            raise HTTPException(status_code=409, detail="Message with this ID already exists")
+            print(f"[{datetime.now().isoformat()}] Mensagem já existe no Redis - ID: {message.id}")
+            raise HTTPException(status_code=409, detail="Mensagem com este ID já existe")
         
         message_data = {
             "id": message.id,
@@ -121,18 +121,18 @@ async def create_scheduled_message(message: ScheduleMessage, token: str = Depend
         }
         
         redis_client.set(redis_key, json.dumps(message_data))
-        print(f"[{datetime.now().isoformat()}] Message inserted to Redis - ID: {message.id}")
+        print(f"[{datetime.now().isoformat()}] Mensagem inserida no Redis - ID: {message.id}")
         
         schedule_message(message.id, message.scheduleTo, message.webhookUrl, message.payload)
         
-        return {"status": "scheduled", "messageId": message.id}
+        return {"status": "agendada", "messageId": message.id}
     
     except HTTPException as http_exc:
-        print(f"[{datetime.now().isoformat()}] HTTPException in create: {http_exc.status_code} - {http_exc.detail}")
+        print(f"[{datetime.now().isoformat()}] HTTPException ao criar: {http_exc.status_code} - {http_exc.detail}")
         raise
     except Exception as e:
-        print(f"[{datetime.now().isoformat()}] Unexpected exception in create: {type(e).__name__}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to schedule message: {str(e)}")
+        print(f"[{datetime.now().isoformat()}] Exceção inesperada ao criar: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Falha ao agendar mensagem: {str(e)}")
 
 @app.delete("/messages/{message_id}")
 async def delete_scheduled_message(message_id: str, token: str = Depends(verify_token)):
@@ -140,21 +140,21 @@ async def delete_scheduled_message(message_id: str, token: str = Depends(verify_
         redis_key = f"message:{message_id}"
         
         if not redis_client.exists(redis_key):
-            print(f"[{datetime.now().isoformat()}] Message not found in Redis - ID: {message_id}")
-            raise HTTPException(status_code=404, detail="Message not found")
+            print(f"[{datetime.now().isoformat()}] Mensagem não encontrada no Redis - ID: {message_id}")
+            raise HTTPException(status_code=404, detail="Mensagem não encontrada")
         
         redis_client.delete(redis_key)
         
         schedule.clear(message_id)
         
-        return {"status": "deleted", "messageId": message_id}
+        return {"status": "removida", "messageId": message_id}
     
     except HTTPException as http_exc:
-        print(f"[{datetime.now().isoformat()}] HTTPException in delete: {http_exc.status_code} - {http_exc.detail}")
+        print(f"[{datetime.now().isoformat()}] HTTPException ao remover: {http_exc.status_code} - {http_exc.detail}")
         raise
     except Exception as e:
-        print(f"[{datetime.now().isoformat()}] Unexpected exception in delete: {type(e).__name__}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete message: {str(e)}")
+        print(f"[{datetime.now().isoformat()}] Exceção inesperada ao remover: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Falha ao remover mensagem: {str(e)}")
 
 @app.get("/messages")
 async def list_scheduled_messages(token: str = Depends(verify_token)):
@@ -162,7 +162,7 @@ async def list_scheduled_messages(token: str = Depends(verify_token)):
         jobs = []
         for job in schedule.jobs:
             jobs.append({
-                "messageId": list(job.tags)[0] if job.tags else "unknown",
+                "messageId": list(job.tags)[0] if job.tags else "desconhecido",
                 "nextRun": job.next_run.isoformat() if job.next_run else None,
                 "job": str(job.job_func)
             })
@@ -170,17 +170,17 @@ async def list_scheduled_messages(token: str = Depends(verify_token)):
         return {"scheduledJobs": jobs, "count": len(jobs)}
     
     except Exception as e:
-        print(f"[{datetime.now().isoformat()}] Error listing jobs: {type(e).__name__}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to list jobs: {str(e)}")
+        print(f"[{datetime.now().isoformat()}] Erro ao listar tarefas: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Falha ao listar tarefas: {str(e)}")
 
 @app.get("/health")
 async def health_check():
     try:
         redis_client.ping()
-        return {"status": "healthy", "redis": "connected"}
+        return {"status": "saudável", "redis": "conectado"}
     except Exception as e:
-        return {"status": "unhealthy", "redis": "disconnected", "error": str(e)}
+        return {"status": "não saudável", "redis": "desconectado", "error": str(e)}
 
 if __name__ == "__main__":
-    print(f"[{datetime.now().isoformat()}] Starting Scheduler API server")
+    print(f"[{datetime.now().isoformat()}] Iniciando servidor da API de Agendamento")
     uvicorn.run(app, host="0.0.0.0", port=8000)

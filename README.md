@@ -1,98 +1,98 @@
-# Scheduler API
+# API de Agendamento
 
-A webhook scheduling service built by **DinastIA Community** - the largest AI Agents community in Brazil.
+Um serviço de agendamento de webhooks desenvolvido pela **Comunidade DinastIA** - a maior comunidade de Agentes de IA do Brasil.
 
-## Overview
+## Visão Geral
 
-This API allows you to schedule webhook calls for specific timestamps. Messages are stored in Redis and executed only once at the specified time.
+Esta API permite agendar chamadas de webhook para timestamps específicos. As mensagens são armazenadas no Redis e executadas apenas uma vez no horário especificado.
 
-### How It Works
+### Como Funciona
 
-1. **Message Scheduling**: When you create a scheduled message, it's stored in Redis and added to the internal scheduler
-2. **One-time Execution**: Jobs are scheduled to run only once at the specified timestamp
-3. **Persistence**: On server restart, all messages from Redis are automatically restored and rescheduled
-4. **Cleanup**: After webhook execution, messages are automatically removed from Redis
+1. **Agendamento de Mensagens**: Quando você cria uma mensagem agendada, ela é armazenada no Redis e adicionada ao agendador interno
+2. **Execução Única**: As tarefas são agendadas para executar apenas uma vez no timestamp especificado
+3. **Persistência**: Na reinicialização do servidor, todas as mensagens do Redis são automaticamente restauradas e reagendadas
+4. **Limpeza**: Após a execução do webhook, as mensagens são automaticamente removidas do Redis
 
-## Prerequisites
+## Pré-requisitos
 
 - Python 3.x
-- Redis server running locally
-- Required dependencies (install with `pip install -r requirements.txt`)
+- Servidor Redis executando localmente
+- Dependências necessárias (instale com `pip install -r requirements.txt`)
 
-## Environment Setup
+## Configuração do Ambiente
 
-Create a `.env` file with:
+Crie um arquivo `.env` com:
 
 ```env
-# Redis Configuration
+# Configuração do Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-# API Configuration
+# Configuração da API
 API_HOST=0.0.0.0
 API_PORT=8000
-API_TOKEN=your-secret-token-here
+API_TOKEN=seu-token-secreto-aqui
 ```
 
-## Running the Server
+## Executando o Servidor
 
 ```bash
 python scheduler_api.py
 ```
 
-The server will start on `http://localhost:8000`
+O servidor será iniciado em `http://localhost:8000`
 
-## Authentication
+## Autenticação
 
-All endpoints (except `/health`) require Bearer token authentication:
+Todos os endpoints (exceto `/health`) requerem autenticação com Bearer token:
 
 ```
-Authorization: Bearer your-secret-token-here
+Authorization: Bearer seu-token-secreto-aqui
 ```
 
-## API Endpoints
+## Endpoints da API
 
-### Schedule a Message
+### Agendar uma Mensagem
 
 `POST /messages`
 
-**Headers:**
-- `Authorization: Bearer your-secret-token-here`
+**Cabeçalhos:**
+- `Authorization: Bearer seu-token-secreto-aqui`
 - `Content-Type: application/json`
 
-**Body:**
+**Corpo:**
 ```json
 {
-  "id": "unique-message-id",
+  "id": "id-unico-da-mensagem",
   "scheduleTo": "2024-12-25T10:30:00Z",
   "payload": {
-    "data": "your webhook payload"
+    "data": "dados-do-seu-webhook"
   },
-  "webhookUrl": "https://your-webhook-endpoint.com"
+  "webhookUrl": "https://seu-endpoint-webhook.com"
 }
 ```
 
-**Response:**
+**Resposta:**
 ```json
 {
-  "status": "scheduled",
-  "messageId": "unique-message-id"
+  "status": "agendada",
+  "messageId": "id-unico-da-mensagem"
 }
 ```
 
-### List Scheduled Messages
+### Listar Mensagens Agendadas
 
 `GET /messages`
 
-**Headers:**
-- `Authorization: Bearer your-secret-token-here`
+**Cabeçalhos:**
+- `Authorization: Bearer seu-token-secreto-aqui`
 
-**Response:**
+**Resposta:**
 ```json
 {
   "scheduledJobs": [
     {
-      "messageId": "unique-message-id",
+      "messageId": "id-unico-da-mensagem",
       "nextRun": "2024-12-25T10:30:00",
       "job": "<function job at 0x...>"
     }
@@ -101,46 +101,46 @@ Authorization: Bearer your-secret-token-here
 }
 ```
 
-### Delete a Scheduled Message
+### Remover uma Mensagem Agendada
 
 `DELETE /messages/{message_id}`
 
-**Headers:**
-- `Authorization: Bearer your-secret-token-here`
+**Cabeçalhos:**
+- `Authorization: Bearer seu-token-secreto-aqui`
 
-**Response:**
+**Resposta:**
 ```json
 {
-  "status": "deleted",
-  "messageId": "unique-message-id"
+  "status": "removida",
+  "messageId": "id-unico-da-mensagem"
 }
 ```
 
-### Health Check
+### Verificação de Saúde
 
 `GET /health`
 
-No authentication required.
+Nenhuma autenticação necessária.
 
-**Response:**
+**Resposta:**
 ```json
 {
-  "status": "healthy",
-  "redis": "connected"
+  "status": "saudável",
+  "redis": "conectado"
 }
 ```
 
-## Error Codes
+## Códigos de Erro
 
-- `401` - Missing or invalid authentication token
-- `404` - Message not found (when deleting)
-- `409` - Message with ID already exists (when creating)
-- `500` - Internal server error
+- `401` - Token de autenticação ausente ou inválido
+- `404` - Mensagem não encontrada (ao remover)
+- `409` - Mensagem com ID já existe (ao criar)
+- `500` - Erro interno do servidor
 
-## About DinastIA Community
+## Sobre a Comunidade DinastIA
 
-This project is developed by **DinastIA Community**, the largest AI Agents community in Brazil, dedicated to advancing artificial intelligence and automation technologies.
+Este projeto é desenvolvido pela **Comunidade DinastIA**, a maior comunidade de Agentes de IA do Brasil, dedicada ao avanço das tecnologias de inteligência artificial e automação.
 
-## License
+## Licença
 
-This project is licensed under the MIT License.
+Este projeto está licenciado sob a Licença MIT.
